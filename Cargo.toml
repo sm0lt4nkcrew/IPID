@@ -1,13 +1,13 @@
 [package]
-name = "ipapi"
+name = "IPID"
 version = "0.1.0"
-edition = "2021"
+edition = "2023"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = "0.4.31"
 colored = "2.0.4"
 json = "0.12.4"
 reqwest = {version = "0.11.20", features = ["blocking", "json"]}
-serde = { version = "1.0.188", feature = ["derive"] }
 serde_json = "1.0.107"

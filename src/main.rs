@@ -1,12 +1,22 @@
+// IPID by sm0lt4nk - make request to ip-api.com to fetch data about IP.
+use chrono::{Timelike, Utc};
 use colored::Colorize;
-
+use reqwest::blocking::get;
+use std::env::args;
+use std::error::Error;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-
+    let args: Vec<String> = args().collect();
+   
+    // Make request & print formatted data.
+    // Panic & print help message if no ip address were provided.
     match args.len() {
         2 => match make_request(&args[1]) {
-            Ok(()) => println!("Done without errors"),
+            Ok(()) => {
+                let t = Utc::now();
+                let fmt_time = format!("{}:{}:{}", t.hour(), t.minute(), t.second());
+                println!("Finished at {} UTC without errors", fmt_time.bold())
+            },
             Err(e) => eprintln!("{}", e)
         },
         _ => {
@@ -16,22 +26,18 @@ fn main() {
     }
 }
 
+// Print help message.
 fn usage() {
-    println!("Print usage");
+    println!("IPID - check ID of IP. This script make request to ip-api.com.");
+    println!("Usage: ipid ip_address");
+    println!("  ip_address      Valid IP address or keyword 'me'.");
 }
 
-fn make_request(ip: &str) -> Result<(), Box<dyn std::error::Error>> {
-    // Create URL
-    let start = "http://ip-api.com/json/";
-    let params = "?fields=17032913";
-
+// Take string response, serde & print formatted data.
+fn print_results(data: &str) -> Result<(), Box<dyn Error>> {
+    println!("{} {}", "~~~~IP ID~~~~".bold(), "by sm0lt4nk");
     
-    let mut url = format!("{}{}{}", start, ip, params);
-    url = url.replace("/me", "");
-
-    // Make request
-    let resp = reqwest::blocking::get(url)?.text()?;
-    let d: serde_json::Value = serde_json::from_str(&resp)?;
+    let d: serde_json::Value = serde_json::from_str(&data)?;
     
     let proxy = match d["proxy"].as_bool().unwrap() {
         true => "PROXY".green(),
@@ -39,15 +45,16 @@ fn make_request(ip: &str) -> Result<(), Box<dyn std::error::Error>> {
     };
     
     let mobile = match d["mobile"].as_bool().unwrap() {
-        true => "mobile".green(),
-        false => "mobile".red()
+        true => "MOBILE".green(),
+        false => "MOBILE".red()
     };
 
     let hosting = match d["hosting"].as_bool().unwrap() {
-        true => "hosting".green(),
-        false => "hosting".red()
+        true => "HOSTING".green(),
+        false => "HOSTING".red()
+    
     };
-
+    
     println!("IP: {} by: {} ({})", 
              d["query"].as_str().unwrap().bold(), 
              d["isp"].as_str().unwrap().bold(), 
@@ -58,60 +65,25 @@ fn make_request(ip: &str) -> Result<(), Box<dyn std::error::Error>> {
              d["city"].as_str().unwrap().bold(), 
              d["country"].as_str().unwrap().bold(), 
              d["lat"], d["lon"]);
-    println!(" {} | {} | {} ", proxy, mobile, hosting);
+    
+    println!("{} | {} | {}", proxy, mobile, hosting);
+    
     Ok(())
 }
 
-//use json::parse;
-//use serde_json::Value;
-//use std::collections::HashMap;
-//use std::env::args;
-//use std::error::Error;
-//use reqwest::blocking::get;
-//
-//// Dont care about pre-request IP validity.
-//// Will use API generated errors to handle any error.
-//fn main() {
-//    let arg: Vec<String> = args().collect();
-//    
-//    if arg.len() == 1 {
-//        usage(); 
-//        panic!("Input error. Provide IP address or me keyword")
-//    } else {
-//        match make_request(&arg[1]) {
-//            // Ok(r) => println!("{:#}", parse(&r).unwrap()),
-//            Ok(r) => match pprint(r) {},
-//            Err(e) => eprintln!("{}", e)
-//        }
-//    }
-//}
-//
-//fn usage() {
-//    println!("Header placeholder.");
-//    println!("  arg Argument description");
-//}
-//
-//fn make_request(ip: &str) -> Result<String, Box<dyn Error>> {
-//    // Create URL
-//    let start = "http://ip-api.com/json/";
-//    let params = "?fields=17033177";
-//
-//    
-//    let mut url = format!("{}{}{}", start, ip, params);
-//    url = url.replace("/me", "");
-//
-//    // Make request
-//    let response = get(url)?.text()?;
-//    Ok(response)
-//}
-//
-//fn pprint(data: String) -> Result<(), Box<dyn Error>> {
-//    // let data_json = parse(&data).unwrap();
-//    let d: Vec<HashMap<String, Value>> = serde_json::from_str(&data)?;
-//    for item in d.iter() {
-//        dbg!(item.keys());
-//    }
-//    Ok(())
-//}
+// Make API request.
+fn make_request(ip: &str) -> Result<(), Box<dyn Error>> {
+    // Create URL
+    let start = "http://ip-api.com/json/";
+    let params = "?fields=17032913";
 
+    
+    let mut url = format!("{}{}{}", start, ip, params);
+    url = url.replace("/me", "");
+
+    // Make request
+    let resp = get(url)?.text()?;
+    print_results(&resp)?;
+    Ok(())
+}
 
